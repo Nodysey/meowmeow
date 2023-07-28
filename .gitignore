@@ -1,1 +1,5 @@
+# Rust build targets
 /target
+
+# Visual Studio Code generated files
+.vscode/
