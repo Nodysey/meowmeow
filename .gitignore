@@ -3,3 +3,6 @@
 
 # Visual Studio Code generated files
 .vscode/
+
+# IntelliJ generated files
+.idea/
