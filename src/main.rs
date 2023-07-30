@@ -23,14 +23,14 @@ async fn main() {
 
     if args[1] == "test"
     {
-        install::download_pkg(String::from("pacman")).await;
+        install::install_pkg(String::from("pacman")).await;
     }
  }
 
 /// Function for the "Search" argument
 async fn search(pkg_name: String)
 {
-    let results : Vec<api::SearchResult> = api::search_packages_loose(pkg_name).await;
+    let results : Vec<api::PackageDetails> = api::search_packages_loose(pkg_name).await;
 
     for i in results
     {
@@ -40,7 +40,7 @@ async fn search(pkg_name: String)
 
 async fn install(pkg_name: String)
 {
-    let pkg : api::SearchResult = api::search_packages_exact(pkg_name).await;
+    let pkg : api::PackageDetails = api::search_packages_exact(pkg_name).await;
 
     println!("{} {}{}{}", ":::".bold().green(), pkg.repo.red(), "/".green(), pkg.pkgname.blue());
     println!("==> Compressed size: {}\n==> Installed Size: {}", pkg.compressed_size.to_string().red(), pkg.installed_size.to_string().red());

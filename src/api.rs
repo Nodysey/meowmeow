@@ -9,7 +9,7 @@ pub struct SearchResultsRoot {
     pub version: i64,
     pub limit: i64,
     pub valid: bool,
-    pub results: Vec<SearchResult>,
+    pub results: Vec<PackageDetails>,
     #[serde(rename = "num_pages")]
     pub num_pages: i64,
     pub page: i64,
@@ -17,7 +17,7 @@ pub struct SearchResultsRoot {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SearchResult {
+pub struct PackageDetails {
     pub pkgname: String,
     pub pkgbase: String,
     pub repo: String,
@@ -52,23 +52,24 @@ pub struct SearchResult {
 }
 
 /// Preforms a loose search (name, description mentions) for a package
-pub async fn search_packages_loose(pkg_name: String) -> Vec<SearchResult>
+pub async fn search_packages_loose(pkg_name: String) -> Vec<PackageDetails>
 {
     let search_results : SearchResultsRoot = reqwest::Client::new()
         .get(format!("https://archlinux.org/packages/search/json/?q={}", pkg_name)).send()
         .await.unwrap()
         .json().await.unwrap();
 
-    let search_results_vec : Vec<SearchResult> = search_results.results;
+    let search_results_vec : Vec<PackageDetails> = search_results.results;
     
     return search_results_vec;
 }
 
 // Preforms an exact search for a function
-pub async fn search_packages_exact(pkg_name: String) -> SearchResult
+pub async fn search_packages_exact(pkg_name: String) -> PackageDetails
 {
     let results : SearchResultsRoot = reqwest::get(format!("https://archlinux.org/packages/search/json/?name={}", pkg_name))
         .await.unwrap().json().await.unwrap();
 
     return results.results[0].to_owned();
 }
+
