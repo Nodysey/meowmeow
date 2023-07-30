@@ -1,4 +1,4 @@
-use std::io::{self, Write};
+use std::io::Write;
 use std::fs::File;
 use std::path::Path;
 
@@ -12,7 +12,7 @@ mod api;
 
 /// Downloads a package from one of the mirrors in /etc/meow.d/mirrorlist
 /// TODO: This needs better error handling at some point.
-pub async fn download_pkg(pkg_name: String)
+async fn download_pkg(pkg_name: String)
 {
     let mirrors : Vec<String> = config::get_mirrors();
     // TODO: Test mirror latency and determine the best one to download from
