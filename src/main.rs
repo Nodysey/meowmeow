@@ -1,7 +1,9 @@
 mod api;
 mod install;
+mod config;
 
 use std::env;
+use std::io::stdin;
 
 use colored::Colorize;
 
@@ -18,7 +20,12 @@ async fn main() {
     {
         install(args[2].to_owned()).await;
     }
-}
+
+    if args[1] == "test"
+    {
+        install::download_pkg(String::from("pacman")).await;
+    }
+ }
 
 /// Function for the "Search" argument
 async fn search(pkg_name: String)
@@ -44,5 +51,17 @@ async fn install(pkg_name: String)
         println!("{} {}", "::".bold().green(), d.blue());
     }
 
-    println!("Do you want to continue with package installation? [Y/N]")
+    println!("Do you want to continue with package installation? [Y/N]");
+    
+    let mut install_verif = String::new();
+    stdin().read_line(&mut install_verif).unwrap(); 
+    
+    if install_verif.trim().to_lowercase() != "y" && install_verif.trim().to_lowercase() != ""
+    {
+        println!("{}", "Installation Cancelled".red());
+        return;
+    }
+
+    // Start installing package + dependencies
+    
 }
