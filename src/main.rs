@@ -10,11 +10,17 @@ async fn main() {
     
     if args[1] == String::from("search")
     {
-        let search_results : Vec<api::SearchResults> = api::search_packages_loose(args[2].to_owned()).await;
-
-        for i in search_results
-        {
-            println!("{} {}\n:: {} | {}", ":::".green() ,i.pkgname.bold().blue(), i.pkgdesc, i.pkgver.yellow());
-        }
+        search(args[2].to_owned()).await;
     }
+}
+
+/// Function for the "Search" argument
+async fn search(pkg_name: String)
+{
+    let results : Vec<api::SearchResults> = api::search_packages_loose(pkg_name).await;
+
+    for i in results
+    {
+        println!("{} {}{}{}\n:: {} | {}", ":::".green(), i.repo.red(), "/".green(), i.pkgname.blue(), i.pkgdesc, i.pkgver.yellow());
+    } 
 }
