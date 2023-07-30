@@ -2,7 +2,6 @@ use reqwest;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use serde_json::Value;
-use serde_json::json;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -10,7 +9,7 @@ pub struct SearchResultsRoot {
     pub version: i64,
     pub limit: i64,
     pub valid: bool,
-    pub results: Vec<SearchResults>,
+    pub results: Vec<SearchResult>,
     #[serde(rename = "num_pages")]
     pub num_pages: i64,
     pub page: i64,
@@ -18,7 +17,7 @@ pub struct SearchResultsRoot {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SearchResults {
+pub struct SearchResult {
     pub pkgname: String,
     pub pkgbase: String,
     pub repo: String,
@@ -53,20 +52,23 @@ pub struct SearchResults {
 }
 
 /// Preforms a loose search (name, description mentions) for a package
-pub async fn search_packages_loose(pkg_name: String) -> Vec<SearchResults>
+pub async fn search_packages_loose(pkg_name: String) -> Vec<SearchResult>
 {
     let search_results : SearchResultsRoot = reqwest::Client::new()
         .get(format!("https://archlinux.org/packages/search/json/?q={}", pkg_name)).send()
         .await.unwrap()
         .json().await.unwrap();
 
-    let search_results_vec : Vec<SearchResults> = search_results.results;
+    let search_results_vec : Vec<SearchResult> = search_results.results;
     
     return search_results_vec;
 }
 
 // Preforms an exact search for a function
-pub async fn search_packages_exact(pkg_name: String)
+pub async fn search_packages_exact(pkg_name: String) -> SearchResult
 {
-    // TODO:
+    let results : SearchResultsRoot = reqwest::get(format!("https://archlinux.org/packages/search/json/?name={}", pkg_name))
+        .await.unwrap().json().await.unwrap();
+
+    return results.results[0].to_owned();
 }
