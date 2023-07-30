@@ -2,6 +2,8 @@ use std::io::{self, Write};
 use std::fs::File;
 use std::path::Path;
 
+use colored::Colorize;
+
 #[path="../src/config.rs"]
 mod config;
 
@@ -9,6 +11,7 @@ mod config;
 mod api;
 
 /// Downloads a package from one of the mirrors in /etc/meow.d/mirrorlist
+/// TODO: This needs better error handling at some point.
 pub async fn download_pkg(pkg_name: String)
 {
     let mirrors : Vec<String> = config::get_mirrors();
@@ -17,12 +20,13 @@ pub async fn download_pkg(pkg_name: String)
     
     if !mirror.contains("$arch") && !mirror.contains("$repo")
     {
+        println!("Mirror {} is invalid.\nMake sure all of the mirrors in /etc/meow.d/mirrorlist contain the keys {} and {}",
+            mirror, "$arch".yellow().bold(), "$repo".yellow().bold());
         return;
     }
     
     let package = api::search_packages_exact(pkg_name).await;
 
-    // Check to see if the file already exists in /tmp/meow/
     if Path::new(&format!("/tmp/meow/{}", package.filename)).exists()
     {
         println!("File already exists in the temporary directory -- skipping.");
@@ -40,4 +44,10 @@ pub async fn download_pkg(pkg_name: String)
     let mut out = File::create(format!("/tmp/meow/{}", package.filename)).expect("Failed to create file!");
     out.write_all(&body).expect("Failed to write bytes!");
 
+}
+
+/// Installs a package & its dependencies.
+pub async fn install_pkg(pkg_name: String)
+{
+    download_pkg(pkg_name).await;
 }
