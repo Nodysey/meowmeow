@@ -16,8 +16,9 @@ mod api;
 async fn download_pkg(pkg_name: String)
 {
     let mirrors : Vec<String> = config::get_mirrors();
+    let arch = "x86_64";
     // TODO: Test mirror latency and determine the best one to download from
-    let mirror : String = mirrors[0].to_owned();
+    let mirror : String = mirrors[1].to_owned();
     
     if !mirror.contains("$arch") && !mirror.contains("$repo")
     {
@@ -34,8 +35,10 @@ async fn download_pkg(pkg_name: String)
     }
 
     let download_url = format!("{}/{}", 
-        mirror.replace("$arch", &package.arch.to_string()).replace("$repo", &package.repo.to_string()),
+        mirror.replace("$arch", &arch.to_string()).replace("$repo", &package.repo.to_string()),
         package.filename);
+
+    dbg!(&download_url);
 
 
     let res = reqwest::get(&download_url).await.expect("WHOOPS!");
