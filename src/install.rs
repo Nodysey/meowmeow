@@ -52,37 +52,47 @@ async fn download_pkg(pkg_name: String)
 pub async fn install_pkg(pkg_name: String)
 {
     let package_details : api::PackageDetails = api::search_packages_exact(pkg_name).await;
+    let pkg_path = format!("/tmp/meow/{}", package_details.filename);
+ 
+    // for dependency in package_details.depends
+    // {
+    //     println!("{} Downloading {}..", "::".green().bold(), &dependency.to_string().blue());
+    //     download_pkg(dependency).await;
+    // }
     
-    for dependency in package_details.depends
-    {
-        println!("{} Downloading {}..", "::".green().bold(), &dependency.to_string().blue());
-        download_pkg(dependency).await;
-    }
-
-    // TODO: INSTALL DEPENDENCIES
     println!("{} Downloading {}..", "::".green().bold(), &package_details.pkgname.to_string().blue());
     download_pkg(package_details.pkgname).await;
+    install_files(pkg_path);
+}
+
+fn install_files(path: String)
+{
+    let path_compressed = &path;
+    let path_decompressed = &path.replace(".tar.zst", ".tar");
     
+    decompress_zstd(&path_compressed);
+    expand_tar(path_decompressed);
 }
 
 // TODO: This should be async.
 /// Decompresses the .tar.zst file into a standard tar file for expansion into the main filesystem
-fn decompress_zstd(path: String)
+fn decompress_zstd(path: &str)
 {
     let decompressed_path = &path.replace(".tar.zst", ".tar");
-    let mut compressed = read(path).expect("Failed to read bytes of file.");
+    let mut compressed = read(&path).expect("Failed to read bytes of file.");
     let mut decompressed = File::create(decompressed_path.to_owned()).unwrap();
     let a = zstd::bulk::decompress(&mut compressed, 99999999 as usize).unwrap();
     let mut c : &[u8] = &a;
 
-    decompressed.write_all(&mut c).expect("Failed to write the bytes lol");
+    println!("==> Decompressing {}", &path.red());
+    decompressed.write_all(&mut c).expect("Failed to write bytes.");
 }
 
-fn expand_tar(path: String)
+fn expand_tar(path: &str)
 {
-    let extracted_path = &path.replace(".tar.zst", ".tar").to_owned();
     let tar = File::open(&path).unwrap();
     let mut archive = Archive::new(tar);
-    archive.unpack(extracted_path).unwrap();
+    println!("==> Extracting {}", path.red());
+    archive.unpack("/").unwrap();
     fs::remove_file(&path).expect("Failed to remove old file\nBad previleges?");
 }
