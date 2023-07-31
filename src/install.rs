@@ -1,8 +1,9 @@
 use std::io::Write;
-use std::fs::File;
+use std::fs::{File, self, read};
 use std::path::Path;
 
 use colored::Colorize;
+use tar::Archive;
 
 #[path="../src/config.rs"]
 mod config;
@@ -29,15 +30,13 @@ async fn download_pkg(pkg_name: String)
 
     if Path::new(&format!("/tmp/meow/{}", package.filename)).exists()
     {
-        println!("File already exists in the temporary directory -- skipping.");
-        return;
+        fs::remove_file(format!("/tmp/meow/{}", package.filename)).expect("Failed to remove file\nBad privileges?");
     }
 
     let download_url = format!("{}/{}", 
         mirror.replace("$arch", &package.arch.to_string()).replace("$repo", &package.repo.to_string()),
         package.filename);
 
-    dbg!(&download_url);
 
     let res = reqwest::get(&download_url).await.expect("WHOOPS!");
     let body = res.bytes().await.unwrap();
@@ -49,5 +48,36 @@ async fn download_pkg(pkg_name: String)
 /// Installs a package & its dependencies.
 pub async fn install_pkg(pkg_name: String)
 {
-    download_pkg(pkg_name).await;
+    let package_details : api::PackageDetails = api::search_packages_exact(pkg_name).await;
+    
+    for dependency in package_details.depends
+    {
+        println!("{} Downloading {}..", "::".green().bold(), &dependency.to_string().blue());
+        download_pkg(dependency).await;
+    }
+
+    // TODO: INSTALL DEPENDENCIES
+    println!("{} Downloading {}..", "::".green().bold(), &package_details.pkgname.to_string().blue());
+    download_pkg(package_details.pkgname).await;
+    
+}
+
+// TODO: This should be async.
+/// Decompresses the .tar.zst file into a standard tar file for expansion into the main filesystem
+fn decompress_zstd(path: String)
+{
+    let decompressed_path = &path.replace(".tar.zst", ".tar");
+    let mut compressed = read(path).expect("Failed to read bytes of file.");
+    let mut decompressed = File::create(decompressed_path.to_owned()).unwrap();
+    let a = zstd::bulk::decompress(&mut compressed, 99999999 as usize).unwrap();
+    let mut c : &[u8] = &a;
+
+    decompressed.write_all(&mut c).expect("Failed to write the bytes lol");
+}
+
+fn expand_tar(path: String)
+{
+    let tar = File::open(path).unwrap();
+    let mut archive = Archive::new(tar);
+    archive.unpack(".").unwrap();
 }
