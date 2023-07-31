@@ -24,9 +24,7 @@ async fn main() {
 
     if args[1] == "test"
     {
-        // install::install_pkg(String::from("neofetch")).await;
-        // install::decompress_zstd("/tmp/meow/bash-5.1.016-4-x86_64.pkg.tar.zst".to_string()).await;
-        println!("{}", bytes_to_readable(2312332313_f64));
+        install::install_pkg(String::from("neofetch")).await;
     }
  }
 
@@ -43,6 +41,12 @@ async fn search(pkg_name: String)
 
 async fn install(pkg_name: String)
 {
+    // if nix::unistd::geteuid() != 0.into()
+    // {
+    //     println!("{}", "Install needs to be ran as root.".red().bold());
+    //     return;
+    // }
+
     let pkg : api::PackageDetails = api::search_packages_exact(pkg_name).await;
     let size_compressed = bytes_to_readable(pkg.compressed_size as f64);
     let size_installed = bytes_to_readable(pkg.installed_size as f64);
@@ -68,7 +72,7 @@ async fn install(pkg_name: String)
     }
 
     // Start installing package + dependencies
-    
+    install::install_pkg(pkg.pkgname).await;
 }
 
 
