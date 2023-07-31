@@ -3,6 +3,7 @@ mod install;
 mod config;
 
 use std::env;
+use std::cmp;
 use std::io::stdin;
 
 use colored::Colorize;
@@ -23,7 +24,9 @@ async fn main() {
 
     if args[1] == "test"
     {
-        install::install_pkg(String::from("pacman")).await;
+        // install::install_pkg(String::from("neofetch")).await;
+        // install::decompress_zstd("/tmp/meow/bash-5.1.016-4-x86_64.pkg.tar.zst".to_string()).await;
+        println!("{}", bytes_to_readable(2312332313_f64));
     }
  }
 
@@ -41,9 +44,11 @@ async fn search(pkg_name: String)
 async fn install(pkg_name: String)
 {
     let pkg : api::PackageDetails = api::search_packages_exact(pkg_name).await;
+    let size_compressed = bytes_to_readable(pkg.compressed_size as f64);
+    let size_installed = bytes_to_readable(pkg.installed_size as f64);
 
     println!("{} {}{}{}", ":::".bold().green(), pkg.repo.red(), "/".green(), pkg.pkgname.blue());
-    println!("==> Compressed size: {}\n==> Installed Size: {}", pkg.compressed_size.to_string().red(), pkg.installed_size.to_string().red());
+    println!("==> Compressed size: {}\n==> Installed Size: {}", size_compressed.red(), size_installed.red());
     println!("{}", "Depends On:".bold().green());
     
     for d in pkg.depends
@@ -64,4 +69,23 @@ async fn install(pkg_name: String)
 
     // Start installing package + dependencies
     
+}
+
+
+// Borrowed from rust-pretty-bytes
+pub fn bytes_to_readable(bytes: f64) -> String
+{
+    let neg = if bytes.is_sign_positive() {""} else {"-"};
+    let bytes = bytes.abs();
+    let units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+    if bytes < 1_f64 {
+        return format!("{}{} {}", neg, bytes, "B");
+    }
+
+    let delimiter = 1000_f64;
+    let exponent = cmp::min((bytes.ln() / delimiter.ln()).floor() as i32, (units.len() - 1) as i32);
+    let readable = format!("{:.2}", bytes / delimiter.powi(exponent)).parse::<f64>().unwrap() * 1_f64;
+
+    let unit = units[exponent as usize];
+    return format!("{}{} {}", neg, readable, unit);
 }
