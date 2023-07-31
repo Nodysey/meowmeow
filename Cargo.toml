@@ -6,10 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-async-compression = {version = "*", features = ["zstd"]}
+async-compression = {version = "*", features = ["zstd", "tokio"]}
 reqwest = {version = "0.11.18", features = ["json"]}
 serde = "1.0.178"
 serde_derive = "1.0.178"
 serde_json = "1.0.104"
 tokio = {version = "1.29.1", features = ["full"]}
 colored = "2"
+zstd = "0.12.4"
