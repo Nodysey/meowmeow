@@ -77,7 +77,9 @@ fn decompress_zstd(path: String)
 
 fn expand_tar(path: String)
 {
-    let tar = File::open(path).unwrap();
+    let extracted_path = &path.replace(".tar.zst", ".tar").to_owned();
+    let tar = File::open(&path).unwrap();
     let mut archive = Archive::new(tar);
-    archive.unpack(".").unwrap();
+    archive.unpack(extracted_path).unwrap();
+    fs::remove_file(&path).expect("Failed to remove old file\nBad previleges?");
 }
