@@ -5,7 +5,8 @@ use toml;
 #[derive(Debug, Deserialize)]
 pub struct Config
 {
-    pub general : General
+    pub general : General,
+    pub mirrors: Mirrors
 }
 
 #[derive(Debug, Deserialize)]
@@ -13,6 +14,15 @@ pub struct General
 {
     pub arch: String,
     pub db_path: String,
+    pub download_path: String,
+    pub no_cache: bool
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Mirrors
+{
+    pub mirrorlist : String,
+    pub max_ping : i32
 }
 
 pub fn get_config() -> Config
