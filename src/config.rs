@@ -55,6 +55,17 @@ pub fn get_mirrors() -> Vec<String>
     return mirrors;
 }
 
+/// Validates mirrors to ensure they're structured correctly
+fn validate_mirror(mirror: &str) -> Result<(), String>
+{
+    if mirror.contains("$arch") && mirror.contains("$repo")
+    {
+        return Ok(());
+    }
+
+    return Err("Failed to validate mirror!".into());
+}
+
 /// Checks the architecture of the CPU we're running the program on.
 pub fn get_cpu_arch() -> String
 {
