@@ -16,7 +16,7 @@ mod api;
 async fn download_pkg(pkg_name: String)
 {
     let mirrors : Vec<String> = config::get_mirrors();
-    let arch = "x86_64";
+    let arch = config::get_cpu_arch(); 
     // TODO: Test mirror latency and determine the best one to download from
     let mirror : String = mirrors[1].to_owned();
     
@@ -54,11 +54,11 @@ pub async fn install_pkg(pkg_name: String)
     let package_details : api::PackageDetails = api::search_packages_exact(pkg_name).await;
     let pkg_path = format!("/tmp/meow/{}", package_details.filename);
  
-    // for dependency in package_details.depends
-    // {
-    //     println!("{} Downloading {}..", "::".green().bold(), &dependency.to_string().blue());
-    //     download_pkg(dependency).await;
-    // }
+    for dependency in package_details.depends
+    {
+        println!("{} Downloading {}..", "::".green().bold(), &dependency.to_string().blue());
+        download_pkg(dependency).await;
+    }
     
     println!("{} Downloading {}..", "::".green().bold(), &package_details.pkgname.to_string().blue());
     download_pkg(package_details.pkgname).await;
@@ -69,7 +69,7 @@ fn install_files(path: String)
 {
     let path_compressed = &path;
     let path_decompressed = &path.replace(".tar.zst", ".tar");
-    
+
     decompress_zstd(&path_compressed);
     expand_tar(path_decompressed);
 }
