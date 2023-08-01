@@ -41,11 +41,11 @@ async fn search(pkg_name: String)
 
 async fn install(pkg_name: String)
 {
-    // if nix::unistd::geteuid() != 0.into()
-    // {
-    //     println!("{}", "Install needs to be ran as root.".red().bold());
-    //     return;
-    // }
+    if nix::unistd::geteuid() != 0.into()
+    {
+        println!("{}", "Install needs to be ran as root.".red().bold());
+        return;
+    }
 
     let pkg : api::PackageDetails = api::search_packages_exact(pkg_name).await;
     let size_compressed = bytes_to_readable(pkg.compressed_size as f64);
