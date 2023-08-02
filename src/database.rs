@@ -66,6 +66,20 @@ pub async fn add_pkg_to_database(pkg: &api::PackageDetails)
    let mut file = File::create(format!("{}/{}", &dir_path, "PKGDESC")).expect("Failed to create PKGDESC file\nBad permissions?");
    file.write_all(&toml.as_bytes()).expect("Failed to write to database\nBad permissions?");
 }
+pub async fn remove_pkg(pkg: &str)
+{
+    let db_path = config::get_config().general.db_path;
+    let dirs = std::fs::read_dir(&db_path).unwrap();
+
+    for dir in dirs
+    {
+        let path = &dir.unwrap().path().into_os_string().into_string().unwrap();
+
+        if !path.contains(&pkg) {continue;}
+
+        std::fs::remove_dir_all(&path).expect("Failed to remove package from database\nBad permissions?");
+    }
+}
 
 pub async fn is_pkg_installed(pkg: &api::PackageDetails) -> bool
 {
