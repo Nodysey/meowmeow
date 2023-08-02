@@ -12,8 +12,11 @@ use std::io::stdin;
 
 use colored::Colorize;
 
+
 #[tokio::main]
 async fn main() {
+    // TODO: Make an arc for the program config
+
     let args : Vec<String> = env::args().collect();
     
     if args[1] == String::from("search")
@@ -32,6 +35,11 @@ async fn main() {
         {
             println!("{}", i);
         }
+    }
+
+    if args[1] == "upgrade" || args[1] == "upgrade-all"
+    {
+        upgrade::upgrade_all().await;
     }
 
     if args[1] == "test" {
