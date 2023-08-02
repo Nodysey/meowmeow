@@ -30,25 +30,27 @@ pub fn get_config() -> Config
     let path = "/etc/meow.conf";
     let contents = fs::read_to_string(path).expect("Failed to read contents of /etc/meow.conf.");
     let config : Config = toml::from_str(&contents).unwrap();
+    dbg!(&config.general.db_path);
 
     return config;
 }
 
-/// Pulls mirrors from /etc/meow.d/mirrorlist
+/// Pulls mirrors from the mirrorlist in meow.conf
 pub fn get_mirrors() -> Vec<String>
 {
-    let mirrorlist = fs::read_to_string("/etc/meow.d/mirrorlist").unwrap();
+    let mirrorlist_path = get_config().mirrors.mirrorlist;
+    let mirrorlist = fs::read_to_string(&mirrorlist_path).unwrap();
     let mut mirrors: Vec<String> = Vec::new();
  
     for mirror in mirrorlist.split("\n")
     {
         let mirror_string = mirror.to_string();
-        
+    
         if mirror_string.is_empty()
         {
             continue;
         }
-
+        validate_mirror(&mirror_string).unwrap();
         mirrors.push(mirror_string);
     }
 
