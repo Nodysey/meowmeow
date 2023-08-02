@@ -32,7 +32,7 @@ pub struct PackageDesc
     pub dependencies_optional : Vec<String>
 }
 
-pub async fn add_pkg_to_database(pkg: &api::PackageDetails)
+pub async fn add_pkg(pkg: &api::PackageDetails)
 {
     let config = config::get_config();
     let file_list = api::get_package_files(&pkg).await;
@@ -66,6 +66,7 @@ pub async fn add_pkg_to_database(pkg: &api::PackageDetails)
    let mut file = File::create(format!("{}/{}", &dir_path, "PKGDESC")).expect("Failed to create PKGDESC file\nBad permissions?");
    file.write_all(&toml.as_bytes()).expect("Failed to write to database\nBad permissions?");
 }
+
 pub async fn remove_pkg(pkg: &str)
 {
     let db_path = config::get_config().general.db_path;
@@ -108,6 +109,25 @@ pub fn get_all_packages() -> Vec<String>
         let installed_pkg : InstalledPackage = toml::from_str(&pkgdesc_contents).unwrap();
 
         packages.push(format!("{} v{}", &installed_pkg.desc.pkgname, &installed_pkg.desc.pkgver));
+    }
+
+    return packages;
+}
+
+pub fn get_all_pkgdesc() -> Vec<PackageDesc>
+{
+    let db_path = config::get_config().general.db_path;
+    let path = std::fs::read_dir(&db_path).unwrap();
+    let mut packages : Vec<PackageDesc> = Vec::new();
+
+    for x in path
+    {
+        let pkg_path = x.unwrap().path().into_os_string().into_string().unwrap();
+        let pkg = format!("{}/{}", pkg_path, "PKGDESC");
+        let pkgdesc_contents = std::fs::read_to_string(&pkg).expect("Failed to read PKGDESC!\nBad permissions?");
+        let installed_pkg : InstalledPackage = toml::from_str(&pkgdesc_contents).unwrap();
+
+        packages.push(installed_pkg.desc);
     }
 
     return packages;
