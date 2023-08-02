@@ -13,6 +13,7 @@ use crate::database;
 async fn download_pkg(pkg: &api::PackageDetails)
 {
     let config = config::get_config();
+    let arch = config::get_cpu_arch();
     let mirrors : Vec<String> = config::get_mirrors();
     let download_path = config.general.download_path;
     
@@ -33,7 +34,7 @@ async fn download_pkg(pkg: &api::PackageDetails)
     }
 
     let download_url = format!("{}/{}", 
-        mirror.replace("$arch", &config.general.arch).replace("$repo", &pkg.repo.to_string()),
+        mirror.replace("$arch", &arch).replace("$repo", &pkg.repo.to_string()),
         pkg.filename);
 
     // Download main archive
