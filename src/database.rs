@@ -76,6 +76,25 @@ pub async fn is_pkg_installed(pkg: &api::PackageDetails) -> bool
     {
         return false;
     }
-    
+
     return true;
 } 
+
+pub async fn get_all_packages() -> Vec<String>
+{
+    let db_path = config::get_config().general.db_path;
+    let path = std::fs::read_dir(&db_path).unwrap();
+    let mut packages : Vec<String> = Vec::new();
+
+    for x in path
+    {
+        let pkg_path = x.unwrap().path().into_os_string().into_string().unwrap();
+        let pkg = format!("{}/{}", pkg_path, "PKGDESC");
+        let pkgdesc_contents = std::fs::read_to_string(&pkg).expect("Failed to read PKGDESC!\nBad permissions?");
+        let installed_pkg : InstalledPackage = toml::from_str(&pkgdesc_contents).unwrap();
+
+        packages.push(format!("{} v{}", &installed_pkg.desc.pkgname, &installed_pkg.desc.pkgver));
+    }
+
+    return packages;
+}
