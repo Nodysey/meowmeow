@@ -66,3 +66,16 @@ pub async fn add_pkg_to_database(pkg: &api::PackageDetails)
    let mut file = File::create(format!("{}/{}", &dir_path, "PKGDESC")).expect("Failed to create PKGDESC file\nBad permissions?");
    file.write_all(&toml.as_bytes()).expect("Failed to write to database\nBad permissions?");
 }
+
+pub async fn is_pkg_installed(pkg: &api::PackageDetails) -> bool
+{
+    let config = config::get_config();
+    let path = format!("{}{}-{}-{}", &config.general.db_path, &pkg.pkgname, &pkg.pkgver, &pkg.pkgrel);
+
+    if !Path::exists(&Path::new(&path))
+    {
+        return false;
+    }
+    
+    return true;
+} 

@@ -47,15 +47,17 @@ async fn download_pkg(pkg: &api::PackageDetails)
 }
 
 /// Installs a pkg & its dependencies.
-pub async fn install_pkg(pkg_name: String)
+pub async fn install_pkg(pkg: &api::PackageDetails)
 {
     let config = config::get_config();
-    let package_details : api::PackageDetails = api::search_packages_exact(&pkg_name).await;
-    let pkg_path = format!("{}{}", config.general.download_path, &package_details.filename);
+    let pkg_path = format!("{}{}", config.general.download_path, &pkg.filename);
  
-    for dependency in &package_details.depends
+    for dependency in &pkg.depends
     {
         let x : api::PackageDetails = api::search_packages_exact(&dependency).await;
+
+        if database::is_pkg_installed(&x).await {continue;}
+
         let depend_path = format!("{}{}", config.general.download_path, &x.filename);
         println!("{} Downloading {}..", "::".green().bold(), &dependency.to_string().blue());
         download_pkg(&x).await;
@@ -63,10 +65,10 @@ pub async fn install_pkg(pkg_name: String)
         database::add_pkg_to_database(&x).await;
     }
     
-    println!("{} Downloading {}..", "::".green().bold(), &package_details.pkgname.to_string().blue());
-    download_pkg(&package_details).await;
+    println!("{} Downloading {}..", "::".green().bold(), &pkg.pkgname.to_string().blue());
+    download_pkg(&pkg).await;
     install_files(&pkg_path);
-    database::add_pkg_to_database(&package_details).await;
+    database::add_pkg_to_database(&pkg).await;
 }
 
 fn install_files(path: &str)

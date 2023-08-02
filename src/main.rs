@@ -53,14 +53,29 @@ async fn install(pkg_name: String)
     let size_compressed = bytes_to_readable(pkg.compressed_size as f64);
     let size_installed = bytes_to_readable(pkg.installed_size as f64);
 
+    if database::is_pkg_installed(&pkg).await
+    {
+        let mut reinstall_verification = String::new();
+        println!("{}\n{} is already installed. Reinstall? [Y/N]",
+            "WARNING".bold().yellow(), &pkg.pkgname.bold().blue());
+
+        stdin().read_line(&mut reinstall_verification).unwrap();
+
+        if reinstall_verification.trim().to_lowercase() != "y" && reinstall_verification.trim().to_lowercase() != ""
+        {
+            return;
+        }
+    }
+
     println!("{} {}{}{}", ":::".bold().green(), pkg.repo.red(), "/".green(), pkg.pkgname.blue());
     println!("==> Compressed size: {}\n==> Installed Size: {}", size_compressed.red(), size_installed.red());
     println!("{}", "Depends On:".bold().green());
     
-    for d in pkg.depends
+    for d in &pkg.depends
     {
         println!("{} {}", "::".bold().green(), d.blue());
     }
+
 
     println!("Do you want to continue with package installation? [Y/N]");
     
@@ -74,7 +89,7 @@ async fn install(pkg_name: String)
     }
 
     // Start installing package + dependencies
-    install::install_pkg(pkg.pkgname).await;
+    install::install_pkg(&pkg).await;
 }
 
 
