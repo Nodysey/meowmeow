@@ -1,4 +1,5 @@
 use reqwest;
+use std::borrow::Borrow;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use serde_json::Value;
@@ -86,8 +87,8 @@ pub async fn search_packages_loose(pkg_name: &str) -> Result<Vec<PackageDetails>
     return Ok(search_results_vec);
 }
 
-// Preforms an exact search for a function
-pub async fn search_packages_exact(pkg_name: String) -> PackageDetails
+/// Preforms an exact search for a package 
+pub async fn search_packages_exact(pkg_name: &str) -> PackageDetails
 {
     let results : SearchResultsRoot = reqwest::get(format!("https://archlinux.org/packages/search/json/?name={}", pkg_name))
         .await.unwrap().json().await.unwrap();
@@ -99,7 +100,7 @@ pub async fn get_package_files(pkg: &PackageDetails) -> Vec<String>
 {
     let api_url : String = 
         format!("https://archlinux.org/packages/{}/{}/{}/files/json", pkg.repo, pkg.arch, pkg.pkgname);
-
+    
     let mut file_list : Vec<String> = Vec::new();
 
     let files : PackageFiles = reqwest::get(&api_url).await.unwrap().json().await.unwrap();
