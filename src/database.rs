@@ -80,7 +80,7 @@ pub async fn is_pkg_installed(pkg: &api::PackageDetails) -> bool
     return true;
 } 
 
-pub async fn get_all_packages() -> Vec<String>
+pub fn get_all_packages() -> Vec<String>
 {
     let db_path = config::get_config().general.db_path;
     let path = std::fs::read_dir(&db_path).unwrap();

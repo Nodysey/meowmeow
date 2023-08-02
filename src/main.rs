@@ -23,9 +23,16 @@ async fn main() {
         install(args[2].to_owned()).await;
     }
 
-    if args[1] == "test"
+    if args[1] == "installed-list" || args[1] == "packages"
     {
+        for i in database::get_all_packages()
+        {
+            println!("{}", i);
+        }
+    }
 
+    if args[1] == "test" {
+    
     }   
  }
 
