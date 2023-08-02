@@ -63,13 +63,32 @@ pub async fn install_pkg(pkg: &api::PackageDetails)
         println!("{} Downloading {}..", "::".green().bold(), &dependency.to_string().blue());
         download_pkg(&x).await;
         install_files(&depend_path);
-        database::add_pkg_to_database(&x).await;
+        database::add_pkg(&x).await;
     }
     
     println!("{} Downloading {}..", "::".green().bold(), &pkg.pkgname.to_string().blue());
     download_pkg(&pkg).await;
     install_files(&pkg_path);
-    database::add_pkg_to_database(&pkg).await;
+    database::add_pkg(&pkg).await;
+}
+
+pub async fn upgrade_packages(pkgs: &Vec<api::PackageDetails>)
+{
+    let config = config::get_config();
+
+    for pkg in pkgs 
+    {
+        let pkg_path = format!("{}{}", config.general.download_path, &pkg.filename);
+        println!("{} Upgrading {} to version {}-{}..",
+            "::".bold().green(), &pkg.pkgname.blue(), &pkg.pkgver, &pkg.pkgrel);
+
+        database::remove_pkg(&pkg.pkgname).await;
+        download_pkg(&pkg).await;
+        install_files(&pkg_path);
+        database::add_pkg(&pkg).await;
+    }
+
+    println!("{} {} {}", "Successfully upgraded ".bold().green(), &pkgs.len().to_string().bold().green(), " packages!".bold().green());
 }
 
 fn install_files(path: &str)
