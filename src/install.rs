@@ -5,11 +5,9 @@ use std::path::Path;
 use colored::Colorize;
 use tar::Archive;
 
-#[path="../src/config.rs"]
-mod config;
-
-#[path="../src/api.rs"]
-mod api;
+use crate::api;
+use crate::config;
+use crate::database;
 
 /// Downloads a package from one of the mirrors in /etc/meow.d/mirrorlist
 /// TODO: This needs better error handling at some point.
