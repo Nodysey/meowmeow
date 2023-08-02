@@ -5,6 +5,7 @@ mod upgrade;
 mod config;
 mod database;
 mod cache;
+mod user_util;
 
 use std::env;
 use std::cmp;
@@ -43,7 +44,8 @@ async fn main() {
     }
 
     if args[1] == "test" {
-    
+        let mirror = &args[2];
+        user_util::add_mirror(mirror)
     }   
  }
 
