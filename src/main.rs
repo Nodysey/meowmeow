@@ -1,7 +1,10 @@
 mod api;
 mod install;
+mod remove;
+mod upgrade;
 mod config;
 mod database;
+mod cache;
 
 use std::env;
 use std::cmp;
@@ -63,7 +66,7 @@ async fn install(pkg_name: String)
     if database::is_pkg_installed(&pkg).await
     {
         let mut reinstall_verification = String::new();
-        println!("{}\n{} is already installed. Reinstall? [Y/N]",
+        println!("!! {} - {} is already installed. Reinstall? [Y/N]",
             "WARNING".bold().yellow(), &pkg.pkgname.bold().blue());
 
         stdin().read_line(&mut reinstall_verification).unwrap();
