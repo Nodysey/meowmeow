@@ -51,6 +51,23 @@ pub struct PackageDetails {
     pub checkdepends: Vec<String>,
 }
 
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PackageFiles {
+    pub pkgname: String,
+    pub repo: String,
+    pub arch: String,
+    #[serde(rename = "pkg_last_update")]
+    pub pkg_last_update: String,
+    #[serde(rename = "files_last_update")]
+    pub files_last_update: String,
+    #[serde(rename = "files_count")]
+    pub files_count: i64,
+    #[serde(rename = "dir_count")]
+    pub dir_count: i64,
+    pub files: Vec<String>,
+}
+
 /// Preforms a loose search (name, description mentions) for a package
 pub async fn search_packages_loose(pkg_name: String) -> Vec<PackageDetails>
 {
@@ -73,3 +90,16 @@ pub async fn search_packages_exact(pkg_name: String) -> PackageDetails
     return results.results[0].to_owned();
 }
 
+pub async fn get_package_files(pkg: &PackageDetails) -> Vec<String>
+{
+    let api_url : String = 
+        format!("https://archlinux.org/packages/{}/{}/{}/files/json", pkg.repo, pkg.arch, pkg.pkgname);
+
+    let mut file_list : Vec<String> = Vec::new();
+
+    let files : PackageFiles = reqwest::get(&api_url).await.unwrap().json().await.unwrap();
+
+    for x in files.files {file_list.push(x)}
+
+    return file_list
+}
