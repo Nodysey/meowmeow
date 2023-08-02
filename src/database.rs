@@ -132,3 +132,24 @@ pub fn get_all_pkgdesc() -> Vec<PackageDesc>
 
     return packages;
 }
+
+pub fn get_pkg(pkg_name: &str) -> Result<InstalledPackage, ()>
+{
+    let db_path = config::get_config().general.db_path;
+    let path = std::fs::read_dir(&db_path).unwrap();
+    
+
+    for dir in path
+    {
+        let pkg_path = dir.unwrap().path().into_os_string().into_string().unwrap();
+        if !&pkg_path.contains(&pkg_name) {continue;}
+
+        let pkg = format!("{}/{}", &pkg_path, "PKGDESC");
+        let contents = std::fs::read_to_string(&pkg).expect("Failed to read PKGDESC!");
+        let installed_pkg : InstalledPackage = toml::from_str(&contents).unwrap();
+
+        return Ok(installed_pkg);
+    }
+
+    return Err(());
+}
