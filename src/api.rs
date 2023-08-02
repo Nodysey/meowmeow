@@ -69,7 +69,7 @@ pub struct PackageFiles {
 }
 
 /// Preforms a loose search (name, description mentions) for a package
-pub async fn search_packages_loose(pkg_name: String) -> Vec<PackageDetails>
+pub async fn search_packages_loose(pkg_name: &str) -> Result<Vec<PackageDetails>, String>
 {
     let search_results : SearchResultsRoot = reqwest::Client::new()
         .get(format!("https://archlinux.org/packages/search/json/?q={}", pkg_name)).send()
@@ -78,7 +78,12 @@ pub async fn search_packages_loose(pkg_name: String) -> Vec<PackageDetails>
 
     let search_results_vec : Vec<PackageDetails> = search_results.results;
     
-    return search_results_vec;
+    if search_results_vec.is_empty()
+    {
+        return Err(format!("No results found for {}", pkg_name));
+    }
+
+    return Ok(search_results_vec);
 }
 
 // Preforms an exact search for a function
