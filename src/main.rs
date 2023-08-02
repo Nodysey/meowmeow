@@ -1,6 +1,7 @@
 mod api;
 mod install;
 mod config;
+mod database;
 
 use std::env;
 use std::cmp;
@@ -24,14 +25,15 @@ async fn main() {
 
     if args[1] == "test"
     {
-        install::install_pkg(String::from("neofetch")).await;
-    }
+
+    }   
  }
 
 /// Function for the "Search" argument
 async fn search(pkg_name: String)
 {
-    let results : Vec<api::PackageDetails> = api::search_packages_loose(pkg_name).await;
+    let results = api::search_packages_loose(&pkg_name).await
+        .expect("Package not found.");
 
     for i in results
     {
@@ -47,7 +49,7 @@ async fn install(pkg_name: String)
         return;
     }
 
-    let pkg : api::PackageDetails = api::search_packages_exact(pkg_name).await;
+    let pkg : api::PackageDetails = api::search_packages_exact(&pkg_name).await;
     let size_compressed = bytes_to_readable(pkg.compressed_size as f64);
     let size_installed = bytes_to_readable(pkg.installed_size as f64);
 
