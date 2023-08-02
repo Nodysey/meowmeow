@@ -30,7 +30,7 @@ pub fn get_config() -> Config
     let path = "/etc/meow.conf";
     let contents = fs::read_to_string(path).expect("Failed to read contents of /etc/meow.conf.");
     let config : Config = toml::from_str(&contents).unwrap();
-    dbg!(&config.general.db_path);
+    // dbg!(&config.general.db_path);
 
     return config;
 }
