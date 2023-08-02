@@ -88,7 +88,7 @@ pub async fn upgrade_packages(pkgs: &Vec<api::PackageDetails>)
         database::add_pkg(&pkg).await;
     }
 
-    println!("{} {} {}", "Successfully upgraded ".bold().green(), &pkgs.len().to_string().bold().green(), " packages!".bold().green());
+    println!("{} {} {}", "Successfully upgraded".bold().green(), &pkgs.len().to_string().bold().green(), "packages!".bold().green());
 }
 
 fn install_files(path: &str)
