@@ -7,8 +7,14 @@ use std::io::Write;
 
 pub fn add_mirror(mirror: &str)
 {
-    let mirrorlist_path = config::get_config().mirrors.mirrorlist;
 
+    if !config::validate_mirror(&mirror)
+    {
+        println!("Invalid mirror format.");
+        return;
+    }
+
+    let mirrorlist_path = config::get_config().mirrors.mirrorlist;
     let mut file = OpenOptions::new()
         .append(true)
         .open(&mirrorlist_path)
