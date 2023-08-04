@@ -34,6 +34,7 @@ async fn main() {
         "upgrade-all"=>upgrade::upgrade_all().await,
         "remove"=>println!("TODO"),
         "search"=>user_util::search(args[2].to_owned()).await,
+        "add-mirror"=>user_util::add_mirror(&args[2]),
         _=>println!("Invalid operation.\nType 'meow -h' for help.")
     }
 
