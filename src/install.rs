@@ -21,13 +21,11 @@ async fn download_pkg(pkg: &api::PackageDetails)
     // TODO: Test mirror latency and determine the best one to download from
     let mirror : String = mirrors[1].to_owned();
     
-    if !mirror.contains("$arch") && !mirror.contains("$repo")
+    if !config::validate_mirror(&mirror)
     {
-        println!("Mirror {} is invalid.\nMake sure all of the mirrors in /etc/meow.d/mirrorlist contain the keys {} and {}",
-            mirror, "$arch".yellow().bold(), "$repo".yellow().bold());
+        println!("Mirror {} is not valid!", &mirror);
         return;
-    }
-
+    }    
 
     if Path::new(&format!("{}{}", &download_path, pkg.filename)).exists()
     {
