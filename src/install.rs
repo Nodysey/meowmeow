@@ -8,6 +8,7 @@ use tar::Archive;
 use crate::api;
 use crate::config;
 use crate::database;
+use crate::util::bytes_to_readable;
 
 /// Downloads a package from one of the mirrors in /etc/meow.d/mirrorlist
 async fn download_pkg(pkg: &api::PackageDetails)
@@ -120,4 +121,56 @@ fn expand_tar(path: &str)
     println!("==> Extracting {}", path.red());
     archive.unpack("/").unwrap();
     fs::remove_file(&path).expect("Failed to remove old file\nBad previleges?");
+}
+
+/// Command for running package installs.
+pub async fn install(pkg_name: String)
+{
+    if nix::unistd::geteuid() != 0.into()
+    {
+        println!("{}", "Install needs to be ran as root.".red().bold());
+        return;
+    }
+
+    let pkg : api::PackageDetails = api::search_packages_exact(&pkg_name).await;
+    let size_compressed = bytes_to_readable(pkg.compressed_size as f64);
+    let size_installed = bytes_to_readable(pkg.installed_size as f64);
+
+    if database::is_pkg_installed(&pkg).await
+    {
+        let mut reinstall_verification = String::new();
+        println!("!! {} - {} is already installed. Reinstall? [Y/N]",
+            "WARNING".bold().yellow(), &pkg.pkgname.bold().blue());
+
+        std::io::stdin().read_line(&mut reinstall_verification).unwrap();
+
+        if reinstall_verification.trim().to_lowercase() != "y" && reinstall_verification.trim().to_lowercase() != ""
+        {
+            return;
+        }
+    }
+
+    println!("{} {}{}{}", ":::".bold().green(), pkg.repo.red(), "/".green(), pkg.pkgname.blue());
+    println!("==> Compressed size: {}\n==> Installed Size: {}", size_compressed.red(), size_installed.red());
+    println!("{}", "Depends On:".bold().green());
+    
+    for d in &pkg.depends
+    {
+        println!("{} {}", "::".bold().green(), d.blue());
+    }
+
+
+    println!("Do you want to continue with package installation? [Y/N]");
+    
+    let mut install_verif = String::new();
+    std::io::stdin().read_line(&mut install_verif).unwrap(); 
+    
+    if install_verif.trim().to_lowercase() != "y" && install_verif.trim().to_lowercase() != ""
+    {
+        println!("{}", "Installation Cancelled".red());
+        return;
+    }
+
+    // Start installing package + dependencies
+    install_pkg(&pkg).await;
 }
