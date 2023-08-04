@@ -50,7 +50,12 @@ pub fn get_mirrors() -> Vec<String>
         {
             continue;
         }
-        validate_mirror(&mirror_string).unwrap();
+        
+        if !validate_mirror(&mirror)
+        {
+            continue;
+        }
+
         mirrors.push(mirror_string);
     }
 
