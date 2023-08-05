@@ -6,7 +6,8 @@ use toml;
 pub struct Config
 {
     pub general : General,
-    pub mirrors: Mirrors
+    pub mirrors: Mirrors,
+    pub enabled_repos: Vec<String>
 }
 
 #[derive(Debug, Deserialize)]
