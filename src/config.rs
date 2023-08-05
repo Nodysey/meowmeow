@@ -7,7 +7,6 @@ pub struct Config
 {
     pub general : General,
     pub mirrors: Mirrors,
-    pub enabled_repos: Vec<String>
 }
 
 #[derive(Debug, Deserialize)]
@@ -16,7 +15,8 @@ pub struct General
     pub arch: String,
     pub db_path: String,
     pub download_path: String,
-    pub no_cache: bool
+    pub no_cache: bool,
+    pub enabled_repos: Vec<String>
 }
 
 #[derive(Debug, Deserialize)]
