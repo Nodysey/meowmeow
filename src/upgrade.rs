@@ -8,7 +8,7 @@ use colored::Colorize;
 /// Checks all of the packages in the database for updates
 pub async fn check_for_updates() -> Vec<api::PackageDetails>
 {
-    let packages: Vec<database::PackageDesc> = database::get_all_packages();
+    let packages: Vec<database::PackageDesc> = database::get_installed_packages();
     let mut upgradable_pkgs : Vec<api::PackageDetails> = Vec::new();
 
     for pkg in packages
