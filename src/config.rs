@@ -29,8 +29,13 @@ pub fn get_config() -> Config
 {
     let path = "/etc/meow.conf";
     let contents = fs::read_to_string(path).expect("Failed to read contents of /etc/meow.conf.");
-    let config : Config = toml::from_str(&contents).unwrap();
+    let mut config : Config = toml::from_str(&contents).unwrap();
     // dbg!(&config.general.db_path);
+
+    if config.general.arch == "any"
+    {
+        config.general.arch = get_cpu_arch();
+    }
 
     return config;
 }
@@ -75,12 +80,7 @@ pub fn validate_mirror(mirror: &str) -> bool
 
 /// Checks the architecture of the CPU we're running the program on.
 pub fn get_cpu_arch() -> String
-{
-    let config = get_config();
-    if config.general.arch != "auto"
-    {
-        return config.general.arch;
-    }    
-
+{  
+    // TODO: This needs to actually get the CPU architecture
     return "x86_64".to_string();
 }
