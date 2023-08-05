@@ -32,6 +32,29 @@ pub struct PackageDesc
     pub dependencies_optional : Vec<String>
 }
 
+/// Specifically for handling arch desc files.
+/// Primarily for use with the arch .db files.
+pub struct ArchDesc
+{
+    pub file_name : String,
+    pub name : String,
+    pub base : String,
+    pub version : String,
+    pub desc : String,
+    pub csize : i32,    // Compressed size
+    pub size : i32,     // Installed size
+    pub md5s : String,
+    pub sha256 : String,
+    pub pgpsig : String,
+    pub url : String,
+    pub license : String,
+    pub arch : String,
+    pub build_date: i64,
+    pub packager : String,
+    pub depends : Vec<String>,
+    pub opt_depends : Vec<String>
+}
+
 pub async fn add_pkg(pkg: &api::PackageDetails)
 {
     let config = config::get_config();
