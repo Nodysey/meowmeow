@@ -3,6 +3,8 @@ use serde_derive::{Serialize, Deserialize};
 use std::fs::{File, create_dir};
 use std::io::Write;
 use std::path::Path;
+use reqwest;
+use colored::Colorize;
 
 use crate::config;
 use crate::api;
@@ -137,7 +139,31 @@ pub fn get_installed_packages() -> Vec<PackageDesc>
     return packages;
 }
 
-pub fn get_pkg(pkg_name: &str) -> Result<InstalledPackage, ()>
+/// Syncs the databases for all enabled repositories.
+/// Needs to be ran as root or as a user with the rights to the database path.
+pub async fn sync_mirrors()
+{
+    let config : config::Config = config::get_config();
+    let mirror = config::get_mirrors()[0].to_owned();
+
+    for repo in config.general.enabled_repos
+    {
+        let dl_url = format!("{}/{}.db", &mirror.replace("$repo", &repo).replace("$arch", &config.general.arch), &repo);
+        let dl_path = format!("{}/{}.db", &config.general.db_path, &repo);   
+        // TODO: Check to see if the bytes between the new database in the current database are the same 
+        if Path::exists(&Path::new(&dl_path))
+        {
+            std::fs::remove_file(&dl_path).unwrap();
+        }
+
+        println!("{} Syncing repository {}", "::".green().bold(), &repo);
+
+        let dl = reqwest::get(&dl_url).await.expect("WHOOPS!");
+        let data = dl.bytes().await.unwrap();
+        let mut out = File::create(&dl_path).expect("Failed to create file -- Bad permissions?");
+        out.write_all(&data).expect("Failed to write data to file.");
+    }
+}
 {
     let db_path = config::get_config().general.db_path;
     let path = std::fs::read_dir(&db_path).unwrap();
@@ -152,8 +178,97 @@ pub fn get_pkg(pkg_name: &str) -> Result<InstalledPackage, ()>
         let contents = std::fs::read_to_string(&pkg).expect("Failed to read PKGDESC!");
         let installed_pkg : InstalledPackage = toml::from_str(&contents).unwrap();
 
-        return Ok(installed_pkg);
+/// Parses an arch linux package desc file.
+/* 
+TODO: 
+There is MOST DEFINITELY a better way to do this. I need to find it, because this looping
+might get fucking exhausting for the software, who knows though! It could work completely fine!
+this could be the best way to do this and I don't even know about it! Who cares?
+*/
+fn parse_desc(desc: &str) -> ArchDesc
+{
+    let split : Vec<&str> = desc.split("\n").collect();
+
+    let mut fname : String = String::new();
+    let mut name : String = String::new();
+    let mut base : String = String::new();
+    let mut ver : String = String::new();
+    let mut desc : String = String::new();
+    let mut csize : i32 = 0;
+    let mut size : i32 = 0;
+    let mut md5 : String = String::new();
+    let mut sha : String = String::new();
+    let mut pgp : String = String::new();
+    let mut url : String = String::new();
+    let mut license : String = String::new();
+    let mut arch : String = String::new();
+    let mut build_date : i64 = 0;
+    let mut packager : String = String::new();
+    let mut depends : Vec<String> = Vec::new();
+    let mut opt_depends : Vec<String> = Vec::new();
+
+    for i in 0..split.len()
+    {
+        match split[i]
+        {
+            "%FILENAME%" => fname = split[i + 1].into(),
+            "%NAME%" => name = split[i + 1].into(),
+            "%BASE%" => base = split[i + 1].into(),
+            "%VERSION%" => ver = split[i + 1].into(),
+            "%DESC%" => desc = split[i + 1].into(), // This could be multi-line sometimes? Not sure.
+            "%CSIZE%" => csize = split[i + 1].parse().unwrap(),
+            "%ISIZE%" => size = split [i + 1 ].parse().unwrap(),
+            "%MD5SUM%" => md5 = split[i + 1].into(),
+            "%SHA256SUM%" => sha = split[i + 1].into(),
+            "%PGPSIG%" => pgp = split[i + 1].into(),
+            "%URL%" => url = split[i + 1].into(),
+            "%LICENSE%" => license = split[i + 1].into(),
+            "%ARCH%" => arch = split[i + 1].into(),
+            "%BUILDDATE%" => build_date = split[i + 1].parse().unwrap(),
+            "%PACKAGER%" => packager = split[i + 1].into(),
+            "%DEPENDS%" => {
+                let mut x = i + 1;
+                while split[x] != ""
+                {
+                    depends.push(split[x].into());
+                    x += 1;
+                }
+            },
+            "%OPTDEPENDS" => {
+                let mut x = i + 1;
+                while split[x] != ""
+                {
+                    opt_depends.push(split[x].into());
+                    x += 1;
+                }
+            },
+
+
+            _=>()
+        }
     }
 
-    return Err(());
+    let archdesc : ArchDesc = ArchDesc {
+        file_name : fname,
+        name : name,
+        base : base,
+        version : ver,
+        desc : desc,
+        csize : csize,
+        size : size,
+        md5s : md5,
+        sha256 : sha,
+        pgpsig : pgp,
+        url : url,
+        license : license,
+        arch : arch,
+        build_date : build_date,
+        packager : packager,
+        depends : depends,
+        opt_depends : opt_depends
+    };
+
+
+    dbg!(&archdesc);
+    return archdesc; 
 }
