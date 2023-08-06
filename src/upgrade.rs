@@ -6,25 +6,21 @@ use colored::Colorize;
 
 
 /// Checks all of the packages in the database for updates
-pub async fn check_for_updates() -> Vec<api::PackageDetails>
+pub async fn check_for_updates() -> Vec<database::ArchDesc>
 {
     let packages: Vec<database::PackageDesc> = database::get_installed_packages();
-    let mut upgradable_pkgs : Vec<api::PackageDetails> = Vec::new();
+    let mut upgradable_packages : Vec<database::ArchDesc> = Vec::new();
 
-    for pkg in packages
+    for pkg in packages 
     {
-        let pkg_api = api::search_packages_exact(&pkg.pkgname).await;
-        let pkg_current_version = format!("{}-{}", &pkg_api.pkgver, &pkg_api.pkgrel);
+        let db_pkg = database::search_db(&pkg.pkgname).await.unwrap();
 
-        if &pkg.pkgver == &pkg_current_version
-        {
-            continue;
-        }
+        if db_pkg.version == pkg.pkgver {continue;}
 
-        upgradable_pkgs.push(pkg_api);
+        upgradable_packages.push(db_pkg);
     }
 
-    return upgradable_pkgs;
+    return upgradable_packages;
 }
 
 pub async fn upgrade_all()
@@ -35,6 +31,8 @@ pub async fn upgrade_all()
         return;
     }
     
+    database::sync().await;
+
     let upgradable_packages = check_for_updates().await;
 
     if upgradable_packages.is_empty()
@@ -46,7 +44,7 @@ pub async fn upgrade_all()
     println!("{} The following packages are available to upgrade:", "::".bold().green());
     for pkg in &upgradable_packages
     {
-        println!("{} {}", "::".green(), &pkg.pkgname);
+        println!("{} {}", "::".green(), &pkg.name);
     }
 
     println!("Would you like to upgrade all {} packages? [Y/N]", &upgradable_packages.len());
@@ -54,7 +52,7 @@ pub async fn upgrade_all()
     let mut upgrade_verif = String::new();
     stdin().read_line(&mut upgrade_verif).unwrap();
 
-    if &upgrade_verif.trim().to_lowercase() != "y" && upgrade_verif.trim() != "" {return;}
+    if upgrade_verif.trim().to_lowercase() != "y" && upgrade_verif.trim() != "" {return;}
 
     install::upgrade_packages(&upgradable_packages).await;
 }

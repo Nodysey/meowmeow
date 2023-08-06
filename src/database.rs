@@ -2,7 +2,7 @@ use flate2::read::GzDecoder;
 use toml;
 use serde_derive::{Serialize, Deserialize};
 use std::fs::{File, create_dir};
-use std::io::{Write, Error};
+use std::io::{Write, Error, Read};
 use std::path::Path;
 use reqwest;
 use tar;
@@ -27,11 +27,11 @@ pub struct PackageDesc
     pub pkgver : String,
     pub pkgdesc : String,
     pub url : String,
-    pub build_date : String,
+    pub build_date : i64,
     pub packager: String,
-    pub size : i64,
+    pub size : i32,
     pub arch : String,
-    pub licenses : Vec<String>,
+    pub license : String,
     pub dependencies : Vec<String>,
     pub dependencies_optional : Vec<String>
 }
@@ -44,6 +44,7 @@ pub struct ArchDesc
     pub file_name : String,
     pub name : String,
     pub base : String,
+    pub repo : String,
     pub version : String,
     pub desc : String,
     pub csize : i32,    // Compressed size
@@ -60,11 +61,12 @@ pub struct ArchDesc
     pub opt_depends : Vec<String>
 }
 
-pub async fn add_pkg(pkg: &api::PackageDetails)
+// TODO: This needs to pull from the "files" file included with arch .tar.zst archives
+pub async fn add_pkg(pkg: &ArchDesc)
 {
     let config = config::get_config();
-    let file_list = api::get_package_files(&pkg).await;
-    let dir_path : String = format!("{}/{}-{}-{}", config.general.db_path, &pkg.pkgname, &pkg.pkgver, &pkg.pkgrel);
+    let file_list : Vec<String> = Vec::new();
+    let dir_path : String = format!("{}/{}-{}", config.general.db_path, &pkg.name, &pkg.version);
 
     if Path::exists(&Path::new(&dir_path))
     {
@@ -73,18 +75,18 @@ pub async fn add_pkg(pkg: &api::PackageDetails)
     }
 
     let pkgdesc = PackageDesc {
-        pkgname: pkg.pkgname.to_owned(),
-        pkgbase: pkg.pkgbase.to_owned(),
-        pkgver: format!("{}-{}", pkg.pkgver, pkg.pkgrel).into(),
-        pkgdesc: pkg.pkgdesc.to_owned(),
+        pkgname: pkg.name.to_owned(),
+        pkgbase: pkg.base.to_owned(),
+        pkgver: pkg.version.to_owned(),
+        pkgdesc: pkg.desc.to_owned(),
         url: pkg.url.to_owned(),
         build_date: pkg.build_date.to_owned(),
         packager: pkg.packager.to_owned(),
-        size: pkg.installed_size,
+        size: pkg.size,
         arch: pkg.arch.to_owned(),
-        licenses: pkg.licenses.to_owned(),
+        license: pkg.license.to_owned(),
         dependencies: pkg.depends.to_owned(),
-        dependencies_optional: pkg.optdepends.to_owned()
+        dependencies_optional: pkg.opt_depends.to_owned()
    };
 
    let installed_pkg = InstalledPackage {desc: pkgdesc, files: file_list};
@@ -110,10 +112,10 @@ pub async fn remove_pkg(pkg: &str)
     }
 }
 
-pub async fn is_pkg_installed(pkg: &api::PackageDetails) -> bool
+pub async fn is_pkg_installed(pkg: &ArchDesc) -> bool
 {
     let config = config::get_config();
-    let path = format!("{}/{}-{}-{}", &config.general.db_path, &pkg.pkgname, &pkg.pkgver, &pkg.pkgrel);
+    let path = format!("{}/{}-{}", &config.general.db_path, &pkg.name, &pkg.version);
 
     if !Path::exists(&Path::new(&path))
     {
@@ -217,7 +219,7 @@ pub async fn search_db(pkgname : &str) -> Result<ArchDesc, Error>
 
             if !filename.contains(pkgname) {continue;}
             
-            let desc = parse_desc(&std::fs::read_to_string(&desc_path).unwrap());
+            let desc = parse_desc(&std::fs::read_to_string(&desc_path).unwrap(), &repo);
 
             if desc.name != pkgname {continue;}
 
@@ -238,7 +240,7 @@ There is MOST DEFINITELY a better way to do this. I need to find it, because thi
 might get fucking exhausting for the software, who knows though! It could work completely fine!
 this could be the best way to do this and I don't even know about it! Who cares?
 */
-fn parse_desc(desc: &str) -> ArchDesc
+fn parse_desc(desc: &str, repo: &str) -> ArchDesc
 {
     let split : Vec<&str> = desc.split("\n").collect();
 
@@ -305,6 +307,7 @@ fn parse_desc(desc: &str) -> ArchDesc
         file_name : fname,
         name : name,
         base : base,
+        repo : repo.into(),
         version : ver,
         desc : desc,
         csize : csize,

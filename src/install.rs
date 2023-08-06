@@ -11,7 +11,7 @@ use crate::database;
 use crate::util::bytes_to_readable;
 
 /// Downloads a package from one of the mirrors in /etc/meow.d/mirrorlist
-async fn download_pkg(pkg: &api::PackageDetails)
+async fn download_pkg(pkg: &database::ArchDesc)
 {
     let config = config::get_config();
     let arch = config::get_cpu_arch();
@@ -27,19 +27,19 @@ async fn download_pkg(pkg: &api::PackageDetails)
         return;
     }    
 
-    if Path::new(&format!("{}{}", &download_path, pkg.filename)).exists()
+    if Path::new(&format!("{}/{}", &download_path, pkg.file_name)).exists()
     {
-        fs::remove_file(format!("{}{}", &download_path, pkg.filename)).expect("Failed to remove file\nBad privileges?");
+        fs::remove_file(format!("{}{}", &download_path, pkg.file_name)).expect("Failed to remove file\nBad privileges?");
     }
 
     let download_url = format!("{}/{}", 
         mirror.replace("$arch", &arch).replace("$repo", &pkg.repo.to_string()),
-        pkg.filename);
+        pkg.file_name);
 
     // Download main archive
     let res = reqwest::get(&download_url).await.expect("WHOOPS!");
     let body = res.bytes().await.unwrap();
-    let mut out = File::create(format!("{}{}", download_path, pkg.filename)).expect("Failed to create file!");
+    let mut out = File::create(format!("{}{}", download_path, pkg.file_name)).expect("Failed to create file!");
     out.write_all(&body).expect("Failed to write bytes!");
 
     // TODO: Download archive signature
@@ -47,44 +47,44 @@ async fn download_pkg(pkg: &api::PackageDetails)
 }
 
 /// Installs a pkg & its dependencies.
-pub async fn install_pkg(pkg: &api::PackageDetails)
+pub async fn install_pkg(pkg: &database::ArchDesc)
 {
     let config = config::get_config();
-    let pkg_path = format!("{}{}", config.general.download_path, &pkg.filename);
+    let pkg_path = format!("{}/{}", config.general.download_path, &pkg.file_name);
  
     for dependency in &pkg.depends
     {
-        let x : api::PackageDetails = api::search_packages_exact(&dependency).await;
+        let x : database::ArchDesc = database::search_db(dependency).await.unwrap();
 
         if database::is_pkg_installed(&x).await {continue;}
 
-        let depend_path = format!("{}{}", config.general.download_path, &x.filename);
+        let depend_path = format!("{}/{}", config.general.download_path, &x.file_name);
         println!("{} Downloading {}..", "::".green().bold(), &dependency.to_string().blue());
         download_pkg(&x).await;
         install_files(&depend_path);
-        database::add_pkg(&x).await;
+        // database::add_pkg(&x).await;
     }
     
-    println!("{} Downloading {}..", "::".green().bold(), &pkg.pkgname.to_string().blue());
+    println!("{} Downloading {}..", "::".green().bold(), &pkg.name.to_string().blue());
     download_pkg(&pkg).await;
     install_files(&pkg_path);
-    database::add_pkg(&pkg).await;
+    // database::add_pkg(&pkg).await;
 }
 
-pub async fn upgrade_packages(pkgs: &Vec<api::PackageDetails>)
+pub async fn upgrade_packages(pkgs: &Vec<database::ArchDesc>)
 {
     let config = config::get_config();
 
     for pkg in pkgs 
     {
-        let pkg_path = format!("{}{}", config.general.download_path, &pkg.filename);
-        println!("{} Upgrading {} to version {}-{}..",
-            "::".bold().green(), &pkg.pkgname.blue(), &pkg.pkgver, &pkg.pkgrel);
+        let pkg_path = format!("{}/{}", config.general.download_path, &pkg.file_name);
+        println!("{} Upgrading {} to version {}..",
+            "::".bold().green(), &pkg.name.blue(), &pkg.version);
 
-        database::remove_pkg(&pkg.pkgname).await;
+        database::remove_pkg(&pkg.name).await;
         download_pkg(&pkg).await;
         install_files(&pkg_path);
-        database::add_pkg(&pkg).await;
+        // database::add_pkg(&pkg).await;
     }
 
     println!("{} {} {}", "Successfully upgraded".bold().green(), &pkgs.len().to_string().bold().green(), "packages!".bold().green());
@@ -130,15 +130,17 @@ pub async fn install(pkg_name: String)
         return;
     }
 
-    let pkg : api::PackageDetails = api::search_packages_exact(&pkg_name).await;
-    let size_compressed = bytes_to_readable(pkg.compressed_size as f64);
-    let size_installed = bytes_to_readable(pkg.installed_size as f64);
+    database::sync().await;
+    
+    let pkg : database::ArchDesc = database::search_db(&pkg_name).await.unwrap();
+    let size_compressed = bytes_to_readable(pkg.csize as f64);
+    let size_installed = bytes_to_readable(pkg.size as f64);
 
     if database::is_pkg_installed(&pkg).await
     {
         let mut reinstall_verification = String::new();
         println!("!! {} - {} is already installed. Reinstall? [Y/N]",
-            "WARNING".bold().yellow(), &pkg.pkgname.bold().blue());
+            "WARNING".bold().yellow(), &pkg.name.bold().blue());
 
         std::io::stdin().read_line(&mut reinstall_verification).unwrap();
 
@@ -148,7 +150,7 @@ pub async fn install(pkg_name: String)
         }
     }
 
-    println!("{} {}{}{}", ":::".bold().green(), pkg.repo.red(), "/".green(), pkg.pkgname.blue());
+    println!("{} {}{}{}", ":::".bold().green(), pkg.repo.red(), "/".green(), pkg.name.blue());
     println!("==> Compressed size: {}\n==> Installed Size: {}", size_compressed.red(), size_installed.red());
     println!("{}", "Depends On:".bold().green());
     
