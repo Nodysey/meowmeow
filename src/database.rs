@@ -1,9 +1,11 @@
+use flate2::read::GzDecoder;
 use toml;
 use serde_derive::{Serialize, Deserialize};
 use std::fs::{File, create_dir};
-use std::io::Write;
+use std::io::{Write, Error};
 use std::path::Path;
 use reqwest;
+use tar;
 use colored::Colorize;
 
 use crate::config;
@@ -36,6 +38,7 @@ pub struct PackageDesc
 
 /// Specifically for handling arch desc files.
 /// Primarily for use with the arch .db files.
+#[derive(Debug)]
 pub struct ArchDesc
 {
     pub file_name : String,
@@ -61,7 +64,7 @@ pub async fn add_pkg(pkg: &api::PackageDetails)
 {
     let config = config::get_config();
     let file_list = api::get_package_files(&pkg).await;
-    let dir_path : String = format!("{}{}-{}-{}", config.general.db_path, &pkg.pkgname, &pkg.pkgver, &pkg.pkgrel);
+    let dir_path : String = format!("{}/{}-{}-{}", config.general.db_path, &pkg.pkgname, &pkg.pkgver, &pkg.pkgrel);
 
     if Path::exists(&Path::new(&dir_path))
     {
@@ -110,7 +113,7 @@ pub async fn remove_pkg(pkg: &str)
 pub async fn is_pkg_installed(pkg: &api::PackageDetails) -> bool
 {
     let config = config::get_config();
-    let path = format!("{}{}-{}-{}", &config.general.db_path, &pkg.pkgname, &pkg.pkgver, &pkg.pkgrel);
+    let path = format!("{}/{}-{}-{}", &config.general.db_path, &pkg.pkgname, &pkg.pkgver, &pkg.pkgrel);
 
     if !Path::exists(&Path::new(&path))
     {
@@ -164,19 +167,59 @@ pub async fn sync_mirrors()
         out.write_all(&data).expect("Failed to write data to file.");
     }
 }
+
+/// Searches the synced databases for the best match to a package's EXACT name.
+/// Assumes that mirrors are synchronized before running.
+pub async fn search_db(pkgname : &str) -> Result<ArchDesc, Error>
 {
-    let db_path = config::get_config().general.db_path;
-    let path = std::fs::read_dir(&db_path).unwrap();
+    let config : config::Config = config::get_config();
     
-
-    for dir in path
+    for repo in config.general.enabled_repos
     {
-        let pkg_path = dir.unwrap().path().into_os_string().into_string().unwrap();
-        if !&pkg_path.contains(&pkg_name) {continue;}
+        let db_path = format!("{}/{}.db", &config.general.db_path, repo);
+        dbg!(&db_path);
 
-        let pkg = format!("{}/{}", &pkg_path, "PKGDESC");
-        let contents = std::fs::read_to_string(&pkg).expect("Failed to read PKGDESC!");
-        let installed_pkg : InstalledPackage = toml::from_str(&contents).unwrap();
+        // Arch's .db files are really .tar.gz files in disguise!
+        let tar_gz = File::open(&db_path).expect("Failed to open database file. Corrupted or bad permissions?");
+        let tar = GzDecoder::new(tar_gz);
+        let mut archive = tar::Archive::new(tar);
+
+        /* 
+        This code is temporary, there's a way to iterate through 
+        the archive's files without having to expand it first,
+        but at the moment, I'm having trouble trying to find
+        out how exactly to do that without having 50,000,000
+        problems with borrowing and moved values.
+         */
+        
+        let tmp_path : String = format!("{}/{}", &config.general.download_path, &repo);
+        if Path::exists(Path::new(&tmp_path))
+        {
+            std::fs::remove_dir_all(&tmp_path).expect("Failed to remove old database tmp file. Bad permissions?");
+        }
+
+        archive.unpack(&tmp_path).unwrap();
+
+        for file in std::fs::read_dir(&tmp_path).unwrap()
+        {
+            let filename = file.unwrap().file_name().into_string().unwrap();
+            let desc_path : String = format!("{}/{}/desc", &tmp_path, &filename);
+
+            if !filename.contains(pkgname) {continue;}
+            
+            let desc = parse_desc(&std::fs::read_to_string(&desc_path).unwrap());
+
+            if desc.name != pkgname {continue;}
+
+            std::fs::remove_dir_all(&tmp_path).expect("Failed to remove db temporary dir. Bad perms or file is still being used?");
+            return Ok(desc);
+        }
+
+        std::fs::remove_dir_all(&tmp_path).expect("Failed to remove db temporary dir. Bad perms or file is still being used?");
+    }
+
+    return Err(Error::new(std::io::ErrorKind::NotFound, format!("Failed to find the package {}", pkgname)));
+}
 
 /// Parses an arch linux package desc file.
 /* 
@@ -268,7 +311,5 @@ fn parse_desc(desc: &str) -> ArchDesc
         opt_depends : opt_depends
     };
 
-
-    dbg!(&archdesc);
     return archdesc; 
 }
