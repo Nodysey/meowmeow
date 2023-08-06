@@ -143,8 +143,8 @@ pub fn get_installed_packages() -> Vec<PackageDesc>
 }
 
 /// Syncs the databases for all enabled repositories.
-/// Needs to be ran as root or as a user with the rights to the database path.
-pub async fn sync_mirrors()
+/// Needs to be ran as root.
+pub async fn sync()
 {
     let config : config::Config = config::get_config();
     let mirror = config::get_mirrors()[0].to_owned();
@@ -153,7 +153,6 @@ pub async fn sync_mirrors()
     {
         let dl_url = format!("{}/{}.db", &mirror.replace("$repo", &repo).replace("$arch", &config.general.arch), &repo);
         let dl_path = format!("{}/{}.db", &config.general.db_path, &repo);   
-        // TODO: Check to see if the bytes between the new database in the current database are the same 
         if Path::exists(&Path::new(&dl_path))
         {
             std::fs::remove_file(&dl_path).unwrap();
