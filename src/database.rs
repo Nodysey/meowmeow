@@ -153,15 +153,26 @@ pub async fn sync()
     {
         let dl_url = format!("{}/{}.db", &mirror.replace("$repo", &repo).replace("$arch", &config.general.arch), &repo);
         let dl_path = format!("{}/{}.db", &config.general.db_path, &repo);   
-        if Path::exists(&Path::new(&dl_path))
-        {
-            std::fs::remove_file(&dl_path).unwrap();
-        }
+
 
         println!("{} Syncing repository {}", "::".green().bold(), &repo);
 
         let dl = reqwest::get(&dl_url).await.expect("WHOOPS!");
         let data = dl.bytes().await.unwrap();
+
+        if Path::exists(&Path::new(&dl_path))
+        {
+            let existing_db = File::open(&dl_path).unwrap();
+            let mut reader = std::io::BufReader::new(existing_db);
+            let mut buffer: Vec<u8> = Vec::new();
+            
+            reader.read_to_end(&mut buffer).unwrap();
+
+            if &buffer.as_slice() == &data {continue;} 
+            
+            std::fs::remove_file(&dl_path).unwrap();
+        }
+
         let mut out = File::create(&dl_path).expect("Failed to create file -- Bad permissions?");
         out.write_all(&data).expect("Failed to write data to file.");
     }
