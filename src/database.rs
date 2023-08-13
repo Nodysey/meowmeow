@@ -62,10 +62,9 @@ pub struct ArchDesc
 }
 
 // TODO: This needs to pull from the "files" file included with arch .tar.zst archives
-pub async fn add_pkg(pkg: &ArchDesc)
+pub async fn add_pkg(pkg: &ArchDesc, files: Vec<String>)
 {
     let config = config::get_config();
-    let file_list : Vec<String> = Vec::new();
     let dir_path : String = format!("{}/{}-{}", config.general.db_path, &pkg.name, &pkg.version);
 
     if Path::exists(&Path::new(&dir_path))
