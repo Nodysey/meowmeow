@@ -35,6 +35,7 @@ async fn main() {
         "remove"=>println!("TODO"),
         "search"=>user_util::search(args[2].to_owned()).await,
         "add-mirror"=>user_util::add_mirror(&args[2]),
+        "sync" => database::sync().await,
         _=>println!("Invalid operation.\nType 'meow -h' for help.")
     }
 
