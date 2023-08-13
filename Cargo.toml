@@ -17,6 +17,7 @@ tar = "0.4.39"
 nix = {version = "0.26.2", features = ["user"]}
 toml = "0.7.6"
 flate2 = "1.0.26"
+mtree = "0.5.0"
 
 [profile.release]
 strip = true

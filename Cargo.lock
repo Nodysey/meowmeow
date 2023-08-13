@@ -472,6 +472,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b06a4cde4c0f271a446782e3eff8de789548ce57dbc8eca9292c27f4a42004b4"
 
 [[package]]
+name = "maybe-uninit"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "60302e4db3a61da70c0cb7991976248362f30319e88850c487b9b95bbf059e00"
+
+[[package]]
 name = "memchr"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -492,6 +498,7 @@ version = "0.1.0"
 dependencies = [
  "colored",
  "flate2",
+ "mtree",
  "nix",
  "reqwest",
  "serde",
@@ -530,6 +537,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "mtree"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d2b64559cc18798f47b1617e4ab35940109e00e9dad9039070e1be65c48b93c"
+dependencies = [
+ "bitflags 1.3.2",
+ "newtype_array",
+ "smallvec 0.6.14",
+]
+
+[[package]]
 name = "native-tls"
 version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -546,6 +564,12 @@ dependencies = [
  "security-framework-sys",
  "tempfile",
 ]
+
+[[package]]
+name = "newtype_array"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "83e349a10d787d414a75dd08a14853797811ccaee263c0d5f6ede859fd943880"
 
 [[package]]
 name = "nix"
@@ -649,7 +673,7 @@ dependencies = [
  "cfg-if",
  "libc",
  "redox_syscall 0.3.5",
- "smallvec",
+ "smallvec 1.11.0",
  "windows-targets",
 ]
 
@@ -878,6 +902,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6528351c9bc8ab22353f9d776db39a20288e8d6c37ef8cfe3317cf875eecfc2d"
 dependencies = [
  "autocfg",
+]
+
+[[package]]
+name = "smallvec"
+version = "0.6.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b97fcaeba89edba30f044a10c6a3cc39df9c3f17d7cd829dd1446cab35f890e0"
+dependencies = [
+ "maybe-uninit",
 ]
 
 [[package]]
