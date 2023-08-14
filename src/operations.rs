@@ -43,9 +43,9 @@ pub async fn install(args: Vec<String>)
 
     if auto_confirm
     {
-        for pkg in &pkgs
+        for pkg in pkgs
         {
-            install::install_package(pkg.to_owned(), reinstall_dependencies).await;
+            install::install_package(pkg, reinstall_dependencies).await;
         }
 
         return;
