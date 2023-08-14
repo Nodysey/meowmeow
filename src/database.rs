@@ -9,7 +9,6 @@ use tar;
 use colored::Colorize;
 
 use crate::config;
-use crate::api;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct InstalledPackage
@@ -38,7 +37,7 @@ pub struct PackageDesc
 
 /// Specifically for handling arch desc files.
 /// Primarily for use with the arch .db files.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ArchDesc
 {
     pub file_name : String,
@@ -88,7 +87,7 @@ pub async fn add_pkg(pkg: &ArchDesc, files: Vec<String>)
         dependencies_optional: pkg.opt_depends.to_owned()
    };
 
-   let installed_pkg = InstalledPackage {desc: pkgdesc, files: file_list};
+   let installed_pkg = InstalledPackage {desc: pkgdesc, files};
    let toml = toml::to_string(&installed_pkg).unwrap();
 
    create_dir(&dir_path).unwrap();
@@ -141,6 +140,18 @@ pub fn get_installed_packages() -> Vec<PackageDesc>
     }
 
     return packages;
+}
+
+pub async fn get_dependencies(dependencies: Vec<&str>) -> Vec<ArchDesc>
+{
+    let mut depends : Vec<ArchDesc> = Vec::new();
+    for dependency in dependencies
+    {
+        let dependency_archdesc = search_db(&dependency).await.expect("Failed to find dependency.");
+        depends.push(dependency_archdesc);
+    }
+
+    return depends;
 }
 
 /// Syncs the databases for all enabled repositories.
@@ -201,6 +212,8 @@ pub async fn search_db(pkgname : &str) -> Result<ArchDesc, Error>
         but at the moment, I'm having trouble trying to find
         out how exactly to do that without having 50,000,000
         problems with borrowing and moved values.
+
+        UPDATE: This code is absolutely horribly optimized. It takes forever to try and sift through all of the database packages.
          */
         
         let tmp_path : String = format!("{}/{}", &config.general.download_path, &repo);

@@ -1,5 +1,4 @@
 use crate::database;
-use crate::api;
 use crate::install;
 use std::io::stdin;
 use colored::Colorize;
@@ -54,5 +53,5 @@ pub async fn upgrade_all()
 
     if upgrade_verif.trim().to_lowercase() != "y" && upgrade_verif.trim() != "" {return;}
 
-    install::upgrade_packages(&upgradable_packages).await;
+    // install::upgrade_packages(&upgradable_packages).await;
 }

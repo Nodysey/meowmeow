@@ -7,6 +7,7 @@ mod database;
 mod cache;
 mod user_util;
 mod util;
+mod operations;
 
 use std::env;
 
@@ -29,13 +30,7 @@ async fn main() {
 
     match operation
     {
-        "install"=>install::install(args[2].to_owned()).await,
-        "upgrade"=>println!("TODO"),
-        "upgrade-all"=>upgrade::upgrade_all().await,
-        "remove"=>println!("TODO"),
-        "search"=>user_util::search(args[2].to_owned()).await,
-        "add-mirror"=>user_util::add_mirror(&args[2]),
-        "sync" => database::sync().await,
+        "install"=> operations::install(args).await,
         _=>println!("Invalid operation.\nType 'meow -h' for help.")
     }
 
