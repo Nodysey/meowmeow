@@ -71,7 +71,7 @@ fn process_tarball(pkg_path: &str) -> Vec<String>
 
     // Process mtree
     let mtree_compressed = BufReader::new(File::open("/.MTREE").unwrap());
-    let mut decoder = bufread::GzDecoder::new(mtree_compressed);
+    let decoder = bufread::GzDecoder::new(mtree_compressed);
     let entries = MTree::from_reader(decoder);
 
     let mut files : Vec<String> = vec![];
