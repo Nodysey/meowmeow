@@ -142,18 +142,6 @@ pub fn get_installed_packages() -> Vec<PackageDesc>
     return packages;
 }
 
-pub async fn get_dependencies(dependencies: Vec<&str>) -> Vec<ArchDesc>
-{
-    let mut depends : Vec<ArchDesc> = Vec::new();
-    for dependency in dependencies
-    {
-        let dependency_archdesc = search_db(&dependency).await.expect("Failed to find dependency.");
-        depends.push(dependency_archdesc);
-    }
-
-    return depends;
-}
-
 /// Syncs the databases for all enabled repositories.
 /// Needs to be ran as root.
 pub async fn sync()
