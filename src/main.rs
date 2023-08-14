@@ -1,4 +1,4 @@
-mod api;
+// mod api;
 mod install;
 mod remove;
 mod upgrade;

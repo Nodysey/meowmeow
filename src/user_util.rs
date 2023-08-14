@@ -1,5 +1,4 @@
 use crate::config;
-use crate::api;
 
 use colored::Colorize;
 use std::fs::OpenOptions;
@@ -23,15 +22,4 @@ pub fn add_mirror(mirror: &str)
     writeln!(file, "{}", &mirror).unwrap();
 
     println!("Added {} to {}", &mirror, &mirrorlist_path);
-}
-
-pub async fn search(pkg_name: String)
-{
-    let results = api::search_packages_loose(&pkg_name).await
-        .expect("Package not found.");
-
-    for i in results
-    {
-        println!("{} {}{}{}\n:: {} | {}", ":::".green(), i.repo.red(), "/".green(), i.pkgname.blue(), i.pkgdesc, i.pkgver.yellow());
-    } 
 }
