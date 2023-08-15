@@ -5,6 +5,7 @@ pub async fn install(args: Vec<String>)
 {
     let mut reinstall_dependencies = false;
     let mut auto_confirm = false;
+    let mut sync_db = false;
     let mut pkgs : Vec<ArchDesc> = vec![];
 
     if nix::unistd::geteuid() != 0.into() 
@@ -12,8 +13,6 @@ pub async fn install(args: Vec<String>)
         println!("Install needs to be ran as root!");
         return;
     }
-
-    sync().await;
 
     for i in 2..args.len()
     {
@@ -29,10 +28,18 @@ pub async fn install(args: Vec<String>)
             continue;
         }
 
+        if args[i] == "-s" || args[i] == "--sync"
+        {
+            sync_db = true;
+            continue;
+        }
+
         let pkg = search_db(&args[i]).await.unwrap();
         
         pkgs.push(pkg);
     }
+
+    if sync_db {sync().await;}
 
     println!("::: The following packages will be installed:");
 
@@ -65,4 +72,8 @@ pub async fn install(args: Vec<String>)
     {
         install::install_package(pkg, reinstall_dependencies).await;
     }
+}
+
+pub async fn sync_databases() {
+    sync().await;
 }

@@ -31,6 +31,7 @@ async fn main() {
     match operation
     {
         "install"=> operations::install(args).await,
+        "sync" => operations::sync_databases().await,
         _=>println!("Invalid operation.\nType 'meow -h' for help.")
     }
 

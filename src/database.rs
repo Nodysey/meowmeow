@@ -1,4 +1,6 @@
 use flate2::read::GzDecoder;
+use futures::future::join_all;
+use tokio::task::JoinHandle;
 use toml;
 use serde_derive::{Serialize, Deserialize};
 use std::fs::{File, create_dir};
@@ -146,36 +148,42 @@ pub fn get_installed_packages() -> Vec<PackageDesc>
 /// Needs to be ran as root.
 pub async fn sync()
 {
-    let config : config::Config = config::get_config();
+    let config = config::get_config();
     let mirror = config::get_mirrors()[0].to_owned();
+    let mut tasks : Vec<JoinHandle<Result<(), ()>>> = vec![];
 
     for repo in config.general.enabled_repos
     {
-        let dl_url = format!("{}/{}.db", &mirror.replace("$repo", &repo).replace("$arch", &config.general.arch), &repo);
-        let dl_path = format!("{}/{}.db", &config.general.db_path, &repo);   
+        let download_url = format!("{}/{}.db", mirror.replace("$repo", &repo).replace("$arch", &config.general.arch), &repo);
+        let download_path = format!("{}/{}.db", &config.general.db_path, &repo);
 
+        let task = tokio::spawn(async move {
+            match reqwest::get(&download_url).await
+            {
+                Ok(resp) => {
+                    println!(":: Syncing {}", &repo);
+                    
+                    match resp.bytes().await
+                    {
+                        Ok(b) => {
+                            let mut out = File::create(&download_path).expect("Failed to create database file.");
+                            out.write_all(&b).expect("Failed to write bytes to database file.");
+                        }
 
-        println!("{} Syncing repository {}", "::".green().bold(), &repo);
+                        Err(_) => println!("!! Failed to get bytes for database.")
+                    }
+                }
 
-        let dl = reqwest::get(&dl_url).await.expect("WHOOPS!");
-        let data = dl.bytes().await.unwrap();
+                Err(_) => println!("!! Could not get the database file for repository {}", &repo)
+            }
 
-        if Path::exists(&Path::new(&dl_path))
-        {
-            let existing_db = File::open(&dl_path).unwrap();
-            let mut reader = std::io::BufReader::new(existing_db);
-            let mut buffer: Vec<u8> = Vec::new();
-            
-            reader.read_to_end(&mut buffer).unwrap();
+            Ok(())
+        });
 
-            if &buffer.as_slice() == &data {continue;} 
-            
-            std::fs::remove_file(&dl_path).unwrap();
-        }
+        tasks.push(task);
+    } 
 
-        let mut out = File::create(&dl_path).expect("Failed to create file -- Bad permissions?");
-        out.write_all(&data).expect("Failed to write data to file.");
-    }
+    join_all(tasks).await;
 }
 
 /// Searches the synced databases for the best match to a package's EXACT name.
