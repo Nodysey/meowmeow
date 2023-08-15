@@ -74,6 +74,38 @@ pub async fn install(args: Vec<String>)
     }
 }
 
+pub async fn search(args: Vec<String>)
+{
+    let mut search_exact = false;
+    let mut pkgs : Vec<&str> = vec![];
+
+    for i in 2..args.len()
+    {
+        if args[i] == "--exact" || args[i] == "-e"
+        {
+            search_exact = true;
+            continue;
+        }
+
+        pkgs.push(&args[i]);
+    }
+
+    if search_exact
+    {
+        for pkg in pkgs
+        {
+            let pkg = search_db(pkg).await.unwrap();
+
+            println!("::: {}\n:: {}", &pkg.name, &pkg.desc);
+        }
+
+        return;
+    }
+
+    // TODO: Implement loose package searching.
+    println!("Not implemented.\nUse -e flag for exact package searching.");
+}
+
 pub async fn sync_databases() {
     sync().await;
 }

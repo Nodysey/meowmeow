@@ -188,7 +188,7 @@ pub async fn sync()
 
 /// Searches the synced databases for the best match to a package's EXACT name.
 /// Assumes that mirrors are synchronized before running.
-pub async fn search_db(pkgname : &str) -> Result<ArchDesc, Error>
+pub async fn search_db(pkgname : &str) -> Result<ArchDesc, ()>
 {
     let config : config::Config = config::get_config();
     
@@ -238,7 +238,12 @@ pub async fn search_db(pkgname : &str) -> Result<ArchDesc, Error>
         std::fs::remove_dir_all(&tmp_path).expect("Failed to remove db temporary dir. Bad perms or file is still being used?");
     }
 
-    return Err(Error::new(std::io::ErrorKind::NotFound, format!("Failed to find the package {}", pkgname)));
+    return Err(());
+}
+
+pub fn search_db_loose() // -> Result<Vec<ArchDesc>, ()>
+{
+
 }
 
 /// Parses an arch linux package desc file.
