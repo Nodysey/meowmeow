@@ -10,7 +10,7 @@ pub async fn install(args: Vec<String>)
 
     if nix::unistd::geteuid() != 0.into() 
     {
-        println!("Install needs to be ran as root!");
+        println!("mrrp (Install) needs to be ran as root!");
         return;
     }
 

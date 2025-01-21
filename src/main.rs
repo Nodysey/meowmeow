@@ -1,6 +1,6 @@
 // mod api;
 mod install;
-mod remove;
+mod uninstall;
 mod upgrade;
 mod config;
 mod database;
@@ -21,7 +21,15 @@ async fn main() {
     {
         // TODO: Print help
         println!("meow v0.1-DEV");
-        println!("(Run this with -h for help)");
+        println!("mrrp – Install a Package");
+        println!("");
+        println!("hsss – Remove a Package");
+        println!("");
+        println!("upgrade – Upgrade Package(s)");
+        println!("");
+        println!("sniff – Search for a Package");
+        println!("");
+        println!("sync – i forget");
         return;
     }
 
@@ -30,10 +38,10 @@ async fn main() {
 
     match operation
     {
-        "search" => operations::search(args).await,
-        "install"=> operations::install(args).await,
+        "sniff" => operations::search(args).await,
+        "mrrp"=> operations::install(args).await,
         "sync" => operations::sync_databases().await,
-        _=>println!("Invalid operation.\nType 'meow -h' for help.")
+        _=>println!("Invalid operation.\nRun 'meow -h' for help.")
     }
 
  }
