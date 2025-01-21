@@ -1,6 +1,6 @@
 // mod api;
 mod install;
-mod uninstall;
+mod remove;
 mod upgrade;
 mod config;
 mod database;
